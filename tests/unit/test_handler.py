@@ -1,3 +1,4 @@
+
 """
 Comprehensive unit tests for the Hello World Lambda function.
 
@@ -6,8 +7,13 @@ This module provides thorough test coverage for all endpoints and error scenario
 
 import json
 import pytest
+import sys
+import os
 from unittest.mock import patch, MagicMock
 from typing import Dict, Any
+
+# Add the parent directory to the Python path to allow imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from hello_world import app
 
@@ -284,6 +290,8 @@ class TestErrorHandling:
         assert (
             response["statusCode"] == 200
         )  # Our upload endpoint handles None body gracefully
+
+
 
 
 class TestIntegration:

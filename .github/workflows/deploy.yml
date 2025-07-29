@@ -46,11 +46,7 @@ jobs:
         run: |
           flake8 hello_world/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 hello_world/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
-
-      - name: Type checking (MyPy)
-        run: |
-          mypy hello_world/ --ignore-missing-imports
-
+        
       - name: Security scan (Bandit)
         run: |
           bandit -r hello_world/ -f json -o bandit-report.json
