@@ -1,0 +1,59 @@
+{
+    "body": "{\"filename\": \"test.txt\", \"content\": \"SGVsbG8gV29ybGQ=\", \"size\": 1024}",
+    "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Content-Length": "67",
+        "Connection": "keep-alive",
+        "Host": "127.0.0.1:3000",
+        "User-Agent": "UploadClient/1.0",
+        "X-Forwarded-Port": "3000",
+        "X-Forwarded-Proto": "http"
+    },
+    "httpMethod": "POST",
+    "isBase64Encoded": false,
+    "multiValueHeaders": {
+        "Accept": ["application/json"],
+        "Content-Type": ["application/json"],
+        "Content-Length": ["67"],
+        "Connection": ["keep-alive"],
+        "Host": ["127.0.0.1:3000"],
+        "User-Agent": ["UploadClient/1.0"],
+        "X-Forwarded-Port": ["3000"],
+        "X-Forwarded-Proto": ["http"]
+    },
+    "multiValueQueryStringParameters": null,
+    "path": "/upload",
+    "pathParameters": null,
+    "queryStringParameters": null,
+    "requestContext": {
+        "accountId": "123456789012",
+        "apiId": "1234567890",
+        "domainName": "127.0.0.1:3000",
+        "extendedRequestId": "upload-request-id",
+        "httpMethod": "POST",
+        "identity": {
+            "accountId": null,
+            "apiKey": null,
+            "caller": null,
+            "cognitoAuthenticationProvider": null,
+            "cognitoAuthenticationType": null,
+            "cognitoIdentityPoolId": null,
+            "sourceIp": "127.0.0.1",
+            "user": null,
+            "userAgent": "UploadClient/1.0",
+            "userArn": null
+        },
+        "path": "/upload",
+        "protocol": "HTTP/1.1",
+        "requestId": "upload-request-id",
+        "requestTime": "01/Jan/2024:12:00:00 +0000",
+        "requestTimeEpoch": 1704110400,
+        "resourceId": "123456",
+        "resourcePath": "/upload",
+        "stage": "Prod"
+    },
+    "resource": "/upload",
+    "stageVariables": null,
+    "version": "1.0"
+} 

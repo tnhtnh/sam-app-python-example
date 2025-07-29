@@ -1,0 +1,59 @@
+{
+    "body": "",
+    "headers": {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+        "Host": "127.0.0.1:3000",
+        "User-Agent": "Mozilla/5.0 (compatible; SAM Local)",
+        "X-Forwarded-Port": "3000",
+        "X-Forwarded-Proto": "http"
+    },
+    "httpMethod": "GET",
+    "isBase64Encoded": false,
+    "multiValueHeaders": {
+        "Accept": ["text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"],
+        "Accept-Encoding": ["gzip, deflate, br"],
+        "Accept-Language": ["en-US,en;q=0.5"],
+        "Connection": ["keep-alive"],
+        "Host": ["127.0.0.1:3000"],
+        "User-Agent": ["Mozilla/5.0 (compatible; SAM Local)"],
+        "X-Forwarded-Port": ["3000"],
+        "X-Forwarded-Proto": ["http"]
+    },
+    "multiValueQueryStringParameters": null,
+    "path": "/",
+    "pathParameters": null,
+    "queryStringParameters": null,
+    "requestContext": {
+        "accountId": "123456789012",
+        "apiId": "1234567890",
+        "domainName": "127.0.0.1:3000",
+        "extendedRequestId": "test-extended-id",
+        "httpMethod": "GET",
+        "identity": {
+            "accountId": null,
+            "apiKey": null,
+            "caller": null,
+            "cognitoAuthenticationProvider": null,
+            "cognitoAuthenticationType": null,
+            "cognitoIdentityPoolId": null,
+            "sourceIp": "127.0.0.1",
+            "user": null,
+            "userAgent": "Mozilla/5.0 (compatible; SAM Local)",
+            "userArn": null
+        },
+        "path": "/",
+        "protocol": "HTTP/1.1",
+        "requestId": "default-request-id",
+        "requestTime": "01/Jan/2024:12:00:00 +0000",
+        "requestTimeEpoch": 1704110400,
+        "resourceId": "123456",
+        "resourcePath": "/",
+        "stage": "Prod"
+    },
+    "resource": "/",
+    "stageVariables": null,
+    "version": "1.0"
+} 

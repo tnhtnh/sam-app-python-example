@@ -1,0 +1,55 @@
+{
+    "body": "",
+    "headers": {
+        "Accept": "application/json",
+        "Connection": "keep-alive",
+        "Host": "127.0.0.1:3000",
+        "User-Agent": "HealthCheck/1.0",
+        "X-Forwarded-Port": "3000",
+        "X-Forwarded-Proto": "http"
+    },
+    "httpMethod": "GET",
+    "isBase64Encoded": false,
+    "multiValueHeaders": {
+        "Accept": ["application/json"],
+        "Connection": ["keep-alive"],
+        "Host": ["127.0.0.1:3000"],
+        "User-Agent": ["HealthCheck/1.0"],
+        "X-Forwarded-Port": ["3000"],
+        "X-Forwarded-Proto": ["http"]
+    },
+    "multiValueQueryStringParameters": null,
+    "path": "/healthcheck",
+    "pathParameters": null,
+    "queryStringParameters": null,
+    "requestContext": {
+        "accountId": "123456789012",
+        "apiId": "1234567890",
+        "domainName": "127.0.0.1:3000",
+        "extendedRequestId": "healthcheck-request-id",
+        "httpMethod": "GET",
+        "identity": {
+            "accountId": null,
+            "apiKey": null,
+            "caller": null,
+            "cognitoAuthenticationProvider": null,
+            "cognitoAuthenticationType": null,
+            "cognitoIdentityPoolId": null,
+            "sourceIp": "127.0.0.1",
+            "user": null,
+            "userAgent": "HealthCheck/1.0",
+            "userArn": null
+        },
+        "path": "/healthcheck",
+        "protocol": "HTTP/1.1",
+        "requestId": "healthcheck-request-id",
+        "requestTime": "01/Jan/2024:12:00:00 +0000",
+        "requestTimeEpoch": 1704110400,
+        "resourceId": "123456",
+        "resourcePath": "/healthcheck",
+        "stage": "Prod"
+    },
+    "resource": "/healthcheck",
+    "stageVariables": null,
+    "version": "1.0"
+} 
