@@ -3,7 +3,7 @@
 version = 0.1
 
 [default.global.parameters]
-stack_name = "cursor-sam-app-python-example"
+stack_name = "photo-sharing-backend"
 
 [default.build.parameters]
 cached = true
@@ -16,6 +16,7 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+parameter_overrides = "Environment=dev"
 
 [default.package.parameters]
 resolve_s3 = true
@@ -28,3 +29,33 @@ warm_containers = "EAGER"
 
 [default.local_start_lambda.parameters]
 warm_containers = "EAGER"
+
+# Development environment configuration
+[dev.global.parameters]
+stack_name = "photo-sharing-backend-dev"
+
+[dev.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = "Environment=dev"
+
+# Staging environment configuration
+[staging.global.parameters]
+stack_name = "photo-sharing-backend-staging"
+
+[staging.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+resolve_s3 = true
+parameter_overrides = "Environment=staging"
+
+# Production environment configuration
+[prod.global.parameters]
+stack_name = "photo-sharing-backend-prod"
+
+[prod.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+resolve_s3 = true
+parameter_overrides = "Environment=prod"
