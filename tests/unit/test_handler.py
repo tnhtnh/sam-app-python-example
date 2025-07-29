@@ -1,4 +1,3 @@
-
 """
 Comprehensive unit tests for the Hello World Lambda function.
 
@@ -13,7 +12,7 @@ from unittest.mock import patch, MagicMock
 from typing import Dict, Any
 
 # Add the parent directory to the Python path to allow imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from hello_world import app
 
@@ -290,8 +289,6 @@ class TestErrorHandling:
         assert (
             response["statusCode"] == 200
         )  # Our upload endpoint handles None body gracefully
-
-
 
 
 class TestIntegration:
