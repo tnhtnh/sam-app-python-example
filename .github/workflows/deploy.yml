@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Cache pipx` dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -99,7 +99,7 @@ jobs:
           use-installer: true
 
       - name: Cache SAM build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .aws-sam
           key: ${{ runner.os }}-sam-${{ hashFiles('template.yaml') }}-${{ hashFiles('**/requirements.txt') }}
