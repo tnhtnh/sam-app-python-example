@@ -5,7 +5,7 @@ This module implements a serverless API with multiple endpoints for health check
 file upload, and basic greeting functionality.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Union, cast
 from aws_lambda_powertools.event_handler import APIGatewayRestResolver
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from aws_lambda_powertools.logging import correlation_paths
@@ -13,7 +13,7 @@ from aws_lambda_powertools import Logger
 from aws_lambda_powertools import Tracer
 from aws_lambda_powertools import Metrics
 from aws_lambda_powertools.metrics import MetricUnit
-from aws_lambda_powertools.event_handler.exceptions import BadRequestError
+from aws_lambda_powertools.event_handler import Response
 
 # Initialize Powertools components
 app = APIGatewayRestResolver()
@@ -52,15 +52,12 @@ def hello() -> Dict[str, str]:
 
 @app.post("/upload")
 @tracer.capture_method
-def upload() -> Dict[str, str]:
+def upload() -> Union[Dict[str, str], Response]:
     """
     Upload endpoint placeholder for file upload functionality.
 
     Returns:
-        Dict[str, str]: Response indicating upload API status
-
-    Raises:
-        BadRequestError: If request body is invalid
+        Dict[str, str] or Response: Response indicating upload API status
     """
     try:
         # Get the request body for processing
@@ -76,7 +73,11 @@ def upload() -> Dict[str, str]:
 
         # Add basic validation
         if request_body and len(request_body) > 10 * 1024 * 1024:  # 10MB limit
-            raise BadRequestError("Request body too large")
+            return Response(
+                status_code=400,
+                content_type="application/json",
+                body={"error": "Request body too large"},
+            )
 
         return {"message": "Upload API - HTTP 200"}
 
@@ -131,7 +132,7 @@ def lambda_handler(event: Dict[str, Any], context: LambdaContext) -> Dict[str, A
         response = app.resolve(event, context)
 
         logger.info("Lambda invocation completed successfully")
-        return response
+        return cast(Dict[str, Any], response)
 
     except Exception as e:
         logger.error(
