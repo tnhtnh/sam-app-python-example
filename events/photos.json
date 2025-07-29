@@ -1,39 +1,35 @@
 {
-    "body": "{\"filename\": \"vacation.jpg\", \"contentType\": \"image/jpeg\"}",
+    "body": null,
     "headers": {
         "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Content-Length": "50",
-        "Authorization": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJleHAiOjk5OTk5OTk5OTl9.test",
         "Connection": "keep-alive",
         "Host": "127.0.0.1:3000",
-        "User-Agent": "UploadClient/1.0",
+        "User-Agent": "PhotoClient/1.0",
         "X-Forwarded-Port": "3000",
         "X-Forwarded-Proto": "http"
     },
-    "httpMethod": "POST",
+    "httpMethod": "GET",
     "isBase64Encoded": false,
     "multiValueHeaders": {
         "Accept": ["application/json"],
-        "Content-Type": ["application/json"],
-        "Content-Length": ["50"],
-        "Authorization": ["Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJleHAiOjk5OTk5OTk5OTl9.test"],
         "Connection": ["keep-alive"],
         "Host": ["127.0.0.1:3000"],
-        "User-Agent": ["UploadClient/1.0"],
+        "User-Agent": ["PhotoClient/1.0"],
         "X-Forwarded-Port": ["3000"],
         "X-Forwarded-Proto": ["http"]
     },
     "multiValueQueryStringParameters": null,
-    "path": "/upload",
+    "path": "/photos",
     "pathParameters": null,
-    "queryStringParameters": null,
+    "queryStringParameters": {
+        "limit": "10"
+    },
     "requestContext": {
         "accountId": "123456789012",
         "apiId": "1234567890",
         "domainName": "127.0.0.1:3000",
-        "extendedRequestId": "upload-request-id",
-        "httpMethod": "POST",
+        "extendedRequestId": "photos-request-id",
+        "httpMethod": "GET",
         "identity": {
             "accountId": null,
             "apiKey": null,
@@ -43,19 +39,19 @@
             "cognitoIdentityPoolId": null,
             "sourceIp": "127.0.0.1",
             "user": null,
-            "userAgent": "UploadClient/1.0",
+            "userAgent": "PhotoClient/1.0",
             "userArn": null
         },
-        "path": "/upload",
+        "path": "/photos",
         "protocol": "HTTP/1.1",
-        "requestId": "upload-request-id",
+        "requestId": "photos-request-id",
         "requestTime": "01/Jan/2024:12:00:00 +0000",
         "requestTimeEpoch": 1704110400,
         "resourceId": "123456",
-        "resourcePath": "/upload",
+        "resourcePath": "/photos",
         "stage": "Prod"
     },
-    "resource": "/upload",
+    "resource": "/photos",
     "stageVariables": null,
     "version": "1.0"
-} 
+}
