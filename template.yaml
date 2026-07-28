@@ -1,9 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  sam-app-python-example
+  photo-sharing-backend
 
-  Production-grade Serverless application with AWS Lambda (Python 3.13) and Powertools
+  Serverless photo sharing backend with authentication, upload, and browsing capabilities
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name for resource naming and configuration
 
 Globals:
   Function:
@@ -13,52 +20,198 @@ Globals:
     Tracing: Active
     LoggingConfig:
       LogFormat: JSON
-      LogLevel: INFO
     Environment:
       Variables:
-        POWERTOOLS_SERVICE_NAME: HelloWorldAPI
-        POWERTOOLS_METRICS_NAMESPACE: HelloWorldAPI
+        POWERTOOLS_SERVICE_NAME: PhotoSharingAPI
+        POWERTOOLS_METRICS_NAMESPACE: PhotoSharingAPI
         POWERTOOLS_LOG_LEVEL: INFO
         POWERTOOLS_TRACER_CAPTURE_RESPONSE: true
         POWERTOOLS_TRACER_CAPTURE_ERROR: true
         POWERTOOLS_LOGGER_SAMPLE_RATE: 0.1
         POWERTOOLS_LOGGER_LOG_EVENT: true
+        BUCKET_NAME: !Ref PhotoBucket
+        TABLE_NAME: !Ref PhotoMetadataTable
+        USER_POOL_ID: !Ref CognitoUserPool
+        CLIENT_ID: !Ref CognitoUserPoolClient
   Api:
     TracingEnabled: true
     Cors:
       AllowMethods: "'GET,POST,OPTIONS'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
       AllowOrigin: "'*'"
+    Auth:
+      DefaultAuthorizer: CognitoAuthorizer
+      Authorizers:
+        CognitoAuthorizer:
+          UserPoolArn: !GetAtt CognitoUserPool.Arn
 
 Resources:
-  HelloWorldFunction:
+  # Cognito User Pool for authentication
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${AWS::StackName}-UserPool"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      UserPoolTags:
+        Service: PhotoSharingAPI
+        Environment: !Ref Environment
+
+  # Cognito User Pool Client
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${AWS::StackName}-WebClient"
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      CallbackURLs:
+        - http://localhost:3000/callback
+      LogoutURLs:
+        - http://localhost:3000/logout
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  # Cognito User Pool Domain
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub "${AWS::StackName}-${Environment}-${AWS::AccountId}"
+      UserPoolId: !Ref CognitoUserPool
+
+  # S3 Bucket for photo storage
+  PhotoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::StackName}-photos-${Environment}-${AWS::AccountId}"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: TransitionToIA
+            Status: Enabled
+            Transition:
+              StorageClass: STANDARD_IA
+              TransitionInDays: 30
+          - Id: TransitionToGlacier
+            Status: Enabled
+            Transition:
+              StorageClass: GLACIER
+              TransitionInDays: 90
+      Tags:
+        - Key: Service
+          Value: PhotoSharingAPI
+        - Key: Environment
+          Value: !Ref Environment
+
+  # DynamoDB table for photo metadata
+  PhotoMetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${AWS::StackName}-PhotoMetadata-${Environment}"
+      BillingMode: ON_DEMAND
+      AttributeDefinitions:
+        - AttributeName: photoId
+          AttributeType: S
+        - AttributeName: uploadedAt
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: photoId
+          KeyType: HASH
+        - AttributeName: uploadedAt
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: UserPhotosIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: uploadedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Service
+          Value: PhotoSharingAPI
+        - Key: Environment
+          Value: !Ref Environment
+
+  # Login Handler Function
+  LoginFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: app.lambda_handler
+      FunctionName: !Sub "${AWS::StackName}-LoginHandler-${Environment}"
+      Handler: app.login_handler
       CodeUri: hello_world
-      Description: Production-grade Hello World API with multiple endpoints
+      Description: Handles OAuth authentication flow with Cognito
       Architectures:
-      - x86_64
+        - x86_64
       Events:
-        # Root endpoint
-        RootPath:
+        LoginPath:
           Type: Api
           Properties:
-            Path: /
+            Path: /login
             Method: GET
-        # Hello endpoint
-        HelloPath:
-          Type: Api
-          Properties:
-            Path: /hello
-            Method: GET
-        # Health check endpoint
-        HealthCheckPath:
-          Type: Api
-          Properties:
-            Path: /healthcheck
-            Method: GET
-        # Upload endpoint
+            Auth:
+              Authorizer: NONE
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt PhotoSharingDLQ.Arn
+      Tags:
+        LambdaPowertools: python
+        Environment: !Ref Environment
+        Service: PhotoSharingAPI
+
+  # Upload Handler Function
+  UploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-UploadHandler-${Environment}"
+      Handler: app.upload_handler
+      CodeUri: hello_world
+      Description: Generates pre-signed S3 URLs for authenticated photo uploads
+      MemorySize: 512
+      Architectures:
+        - x86_64
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref PhotoBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref PhotoMetadataTable
+      Events:
         UploadPath:
           Type: Api
           Properties:
@@ -66,35 +219,78 @@ Resources:
             Method: POST
       DeadLetterQueue:
         Type: SQS
-        TargetArn: !GetAtt HelloWorldDLQ.Arn
+        TargetArn: !GetAtt PhotoSharingDLQ.Arn
       Tags:
         LambdaPowertools: python
-        Environment: production
-        Service: HelloWorldAPI
+        Environment: !Ref Environment
+        Service: PhotoSharingAPI
+
+  # Photos Handler Function
+  PhotosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-PhotosHandler-${Environment}"
+      Handler: app.photos_handler
+      CodeUri: hello_world
+      Description: Retrieves paginated photo listings with randomization
+      Architectures:
+        - x86_64
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PhotoMetadataTable
+      Events:
+        PhotosPath:
+          Type: Api
+          Properties:
+            Path: /photos
+            Method: GET
+            Auth:
+              Authorizer: NONE
+      DeadLetterQueue:
+        Type: SQS
+        TargetArn: !GetAtt PhotoSharingDLQ.Arn
+      Tags:
+        LambdaPowertools: python
+        Environment: !Ref Environment
+        Service: PhotoSharingAPI
 
   # Dead Letter Queue for failed invocations
-  HelloWorldDLQ:
+  PhotoSharingDLQ:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub "${AWS::StackName}-HelloWorld-DLQ"
+      QueueName: !Sub "${AWS::StackName}-PhotoSharing-DLQ-${Environment}"
       MessageRetentionPeriod: 1209600  # 14 days
       Tags:
         - Key: Service
-          Value: HelloWorldAPI
+          Value: PhotoSharingAPI
+        - Key: Environment
+          Value: !Ref Environment
 
-  # CloudWatch Log Group with retention
-  HelloWorldLogGroup:
+  # CloudWatch Log Groups with retention
+  LoginFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${HelloWorldFunction}"
+      LogGroupName: !Sub "/aws/lambda/${LoginFunction}"
+      RetentionInDays: 30
+
+  UploadFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${UploadFunction}"
+      RetentionInDays: 30
+
+  PhotosFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${PhotosFunction}"
       RetentionInDays: 30
 
   # CloudWatch Alarms for monitoring
-  HelloWorldErrorAlarm:
+  LoginFunctionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-HelloWorld-Errors"
-      AlarmDescription: "Lambda function errors"
+      AlarmName: !Sub "${AWS::StackName}-LoginFunction-Errors-${Environment}"
+      AlarmDescription: "Login function errors"
       MetricName: Errors
       Namespace: AWS/Lambda
       Statistic: Sum
@@ -104,31 +300,48 @@ Resources:
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref HelloWorldFunction
+          Value: !Ref LoginFunction
       TreatMissingData: notBreaching
 
-  HelloWorldDurationAlarm:
+  UploadFunctionErrorAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${AWS::StackName}-HelloWorld-Duration"
-      AlarmDescription: "Lambda function duration"
-      MetricName: Duration
+      AlarmName: !Sub "${AWS::StackName}-UploadFunction-Errors-${Environment}"
+      AlarmDescription: "Upload function errors"
+      MetricName: Errors
       Namespace: AWS/Lambda
-      Statistic: Average
+      Statistic: Sum
       Period: 300
       EvaluationPeriods: 2
-      Threshold: 10000  # 10 seconds
+      Threshold: 5
       ComparisonOperator: GreaterThanThreshold
       Dimensions:
         - Name: FunctionName
-          Value: !Ref HelloWorldFunction
+          Value: !Ref UploadFunction
+      TreatMissingData: notBreaching
+
+  PhotosFunctionErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-PhotosFunction-Errors-${Environment}"
+      AlarmDescription: "Photos function errors"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref PhotosFunction
       TreatMissingData: notBreaching
 
   # Application monitoring
   ApplicationResourceGroup:
     Type: AWS::ResourceGroups::Group
     Properties:
-      Name: !Sub "ApplicationInsights-SAM-${AWS::StackName}"
+      Name: !Sub "ApplicationInsights-SAM-${AWS::StackName}-${Environment}"
       ResourceQuery:
         Type: CLOUDFORMATION_STACK_1_0
 
@@ -139,21 +352,57 @@ Resources:
       AutoConfigurationEnabled: true
 
 Outputs:
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod environment"
+  PhotoSharingApi:
+    Description: "API Gateway endpoint URL for Photo Sharing API"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
     Export:
-      Name: !Sub "${AWS::StackName}-HelloWorldApi"
+      Name: !Sub "${AWS::StackName}-PhotoSharingApi"
 
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref CognitoUserPool
     Export:
-      Name: !Sub "${AWS::StackName}-HelloWorldFunction"
+      Name: !Sub "${AWS::StackName}-UserPoolId"
 
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  CognitoUserPoolClientId:
+    Description: "Cognito User Pool Client ID"
+    Value: !Ref CognitoUserPoolClient
     Export:
-      Name: !Sub "${AWS::StackName}-HelloWorldFunctionRole"
+      Name: !Sub "${AWS::StackName}-UserPoolClientId"
+
+  CognitoHostedUIUrl:
+    Description: "Cognito Hosted UI URL"
+    Value: !Sub "https://${CognitoUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com"
+    Export:
+      Name: !Sub "${AWS::StackName}-HostedUIUrl"
+
+  PhotoBucketName:
+    Description: "S3 Bucket for photo storage"
+    Value: !Ref PhotoBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-PhotoBucket"
+
+  PhotoMetadataTableName:
+    Description: "DynamoDB table for photo metadata"
+    Value: !Ref PhotoMetadataTable
+    Export:
+      Name: !Sub "${AWS::StackName}-PhotoMetadataTable"
+
+  LoginFunctionArn:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt LoginFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LoginFunction"
+
+  UploadFunctionArn:
+    Description: "Upload Lambda Function ARN"
+    Value: !GetAtt UploadFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-UploadFunction"
+
+  PhotosFunctionArn:
+    Description: "Photos Lambda Function ARN"
+    Value: !GetAtt PhotosFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-PhotosFunction"
 
